@@ -1,6 +1,7 @@
 package routerx
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -20,6 +21,22 @@ func NewCtx(w http.ResponseWriter, r *http.Request, hs []Handler) *Ctx {
 		Request:  r,
 		handlers: hs,
 	}
+}
+
+// BodyParser parse the json request body.
+// Make sure that body paramter is a pointer.
+func (c *Ctx) BodyParser(body any) error {
+	return json.NewDecoder(c.Request.Body).Decode(body)
+}
+
+// Context return the request context.
+func (c *Ctx) Context() context.Context {
+	return c.Request.Context()
+}
+
+// WithContext set the request context.
+func (c *Ctx) WithContext(ctx context.Context) {
+	c.Request = c.Request.WithContext(ctx)
 }
 
 // Next call the next handler
