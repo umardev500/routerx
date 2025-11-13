@@ -63,8 +63,8 @@ func (c *Ctx) SendStatus(code int) error {
 	return nil
 }
 
-// Json sends a JSON response.
-func (c *Ctx) Json(data any) error {
+// JSON sends a JSON response.
+func (c *Ctx) JSON(data any) error {
 	code := http.StatusOK
 	if c.status != 0 {
 		code = c.status

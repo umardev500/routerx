@@ -40,13 +40,13 @@ func (a *App) handle(method, path string, handlers ...Handler) {
 
 		if r.Method != method {
 			c.Status(http.StatusMethodNotAllowed).
-				Json(http.StatusText(http.StatusMethodNotAllowed))
+				JSON(http.StatusText(http.StatusMethodNotAllowed))
 			return
 		}
 
 		if err := c.Next(); err != nil {
 			c.Status(http.StatusInternalServerError).
-				Json(err.Error())
+				JSON(err.Error())
 			return
 		}
 	})
