@@ -72,6 +72,10 @@ func (c *Ctx) QueryParser(out any) error {
 // If the field is a pointer, it allocates a new value and set it recursively.
 // Returns an error if the value cannot be set.
 func setValue(f reflect.Value, val string) error {
+	if val == "" {
+		return nil
+	}
+
 	// Handle pointers
 	if f.Kind() == reflect.Pointer {
 		elemType := f.Type().Elem()
