@@ -3,7 +3,9 @@ package routerx
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"reflect"
 	"strconv"
 )
 
@@ -21,6 +23,86 @@ func NewCtx(w http.ResponseWriter, r *http.Request, hs []Handler) *Ctx {
 		Request:  r,
 		handlers: hs,
 	}
+}
+
+// QueryParser parses the query parameters.
+// Make sure the out parameter is a pointer.
+func (c *Ctx) QueryParser(out any) error {
+	v := reflect.ValueOf(out)
+	if v.Kind() != reflect.Pointer {
+		return fmt.Errorf("out must be a pointer")
+	}
+
+	if v.IsNil() {
+		return fmt.Errorf("out must not be nil")
+	}
+
+	v = v.Elem()
+	if v.Kind() != reflect.Struct {
+		return fmt.Errorf("out must be a struct")
+	}
+
+	t := v.Type()
+	q := c.Request.URL.Query()
+
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		tag, ok := field.Tag.Lookup("query")
+		if !ok {
+			continue
+		}
+
+		val := q.Get(tag)
+
+		f := v.Field(i)
+		if !f.CanSet() {
+			continue
+		}
+
+		if err := setValue(f, val); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// setValue sets the value of a struct field from a string.
+// It supports basic type (string, int, bool) and pointer fields.
+// If the field is a pointer, it allocates a new value and set it recursively.
+// Returns an error if the value cannot be set.
+func setValue(f reflect.Value, val string) error {
+	// Handle pointers
+	if f.Kind() == reflect.Pointer {
+		elemType := f.Type().Elem()
+		ptr := reflect.New(elemType)
+		if err := setValue(ptr.Elem(), val); err != nil {
+			return err
+		}
+		f.Set(ptr)
+		return nil
+	}
+
+	// Handle basic types
+	switch f.Kind() {
+	case reflect.String:
+		f.SetString(val)
+	case reflect.Int:
+		intVal, err := strconv.Atoi(val)
+		if err != nil {
+			return fmt.Errorf("invalid int value: %v", err)
+		}
+		f.SetInt(int64(intVal))
+	case reflect.Bool:
+		boolVal, err := strconv.ParseBool(val)
+		if err != nil {
+			return fmt.Errorf("invalid bool value: %v", err)
+		}
+		f.SetBool(boolVal)
+	default:
+		return fmt.Errorf("unsupported field type %s", f.Kind())
+	}
+	return nil
 }
 
 // BodyParser parses the JSON request body.
