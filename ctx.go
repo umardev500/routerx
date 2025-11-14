@@ -203,3 +203,9 @@ func (c *Ctx) QueryBool(key string, defaulVal ...bool) bool {
 
 	return val
 }
+
+// Param returns the URL parameter value for the given key.
+// It returns the empty string if there are no values associated with the key.
+func (c *Ctx) Param(key string) string {
+	return c.Request.PathValue(key)
+}
