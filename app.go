@@ -1,6 +1,8 @@
 package routerx
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type App struct {
 	server      *http.Server
@@ -64,8 +66,7 @@ func (a *App) Get(path string, handlers ...Handler) {
 
 // Grou implements Router
 func (a *App) Group(prefix string) Router {
-	NewGroup(prefix, a)
-	return a
+	return NewGroup(prefix, a)
 }
 
 // Patch implements Router

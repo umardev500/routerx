@@ -1,6 +1,8 @@
 package routerx
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type Group struct {
 	prefix string
