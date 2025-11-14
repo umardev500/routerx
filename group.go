@@ -30,8 +30,7 @@ func (g *Group) Get(path string, handlers ...Handler) {
 
 // Grou implements Router
 func (g *Group) Group(prefix string) Router {
-	NewGroup(g.prefix+prefix, g.app)
-	return g
+	return NewGroup(g.prefix+prefix, g.app)
 }
 
 // Patch implements Router
