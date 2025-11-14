@@ -1,6 +1,7 @@
 package routerx
 
 import (
+	"fmt"
 	"net/http"
 )
 
@@ -38,8 +39,9 @@ func (a *App) Listen(addr *string) error {
 // handle register the handle with given path
 func (a *App) handle(method, path string, handlers ...Handler) {
 	normalizedPath := NormalizePath(path)
+	finalPath := fmt.Sprintf("%s %s", method, normalizedPath)
 
-	a.mux.HandleFunc(normalizedPath, func(w http.ResponseWriter, r *http.Request) {
+	a.mux.HandleFunc(finalPath, func(w http.ResponseWriter, r *http.Request) {
 		c := NewCtx(w, r, handlers)
 
 		if r.Method != method {
