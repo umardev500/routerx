@@ -3,6 +3,7 @@ package routerx
 import (
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 type App struct {
@@ -41,8 +42,11 @@ func (a *App) handle(method, path string, handlers ...Handler) {
 	normalizedPath := NormalizePath(path)
 	finalPath := fmt.Sprintf("%s %s", method, normalizedPath)
 
+	middlewares := a.collectMiddlewares(path)
+	allHandlers := append(middlewares, handlers...)
+
 	a.mux.HandleFunc(finalPath, func(w http.ResponseWriter, r *http.Request) {
-		c := NewCtx(w, r, handlers)
+		c := NewCtx(w, r, allHandlers)
 
 		if r.Method != method {
 			c.Status(http.StatusMethodNotAllowed).
@@ -91,4 +95,33 @@ func (a *App) Put(path string, handlers ...Handler) {
 // Use implements Router
 func (a *App) Use(handlers ...Handler) {
 	a.middlewares[rootMiddlewarePrefix] = append(a.middlewares[rootMiddlewarePrefix], handlers...)
+}
+
+// collectMiddlewares returns a slice of middleware handlers that should be applied
+// for a given route path. Middleware are applied in the following order:
+//
+// 1. Root/global middleware (stored under rootMiddlewarePrefix, e.g. "/") is always added first.
+// 2. Any group middleware whose prefix matches the start of the given path.
+//
+// The returned slice can then be prepended to route-specific handlers when constructing
+// the full handler chain for a route. This ensures root middleware always runs first,
+// followed by parent/child group middleware.
+func (a *App) collectMiddlewares(path string) []Handler {
+	var result []Handler
+
+	// Ensure root middleware is added first
+	if rootMw, ok := a.middlewares[rootMiddlewarePrefix]; ok {
+		result = append(result, rootMw...)
+	}
+
+	for prefix, mws := range a.middlewares {
+		if prefix == rootMiddlewarePrefix {
+			continue // already added root
+		}
+		if strings.HasPrefix(path, prefix) {
+			result = append(result, mws...)
+		}
+	}
+
+	return result
 }
