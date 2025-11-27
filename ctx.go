@@ -25,6 +25,21 @@ func NewCtx(w http.ResponseWriter, r *http.Request, hs []Handler) *Ctx {
 	}
 }
 
+// Locals sets or gets context values.
+// Setter: c.Locals("key", "value")
+// Getter: c.Locals("key")
+func (c *Ctx) Locals(key any, val ...any) any {
+	// Setter
+	if len(val) > 0 {
+		ctx := context.WithValue(c.Request.Context(), key, val[0])
+		c.Request = c.Request.WithContext(ctx)
+		return nil
+	}
+
+	// Getter
+	return c.Request.Context().Value(key)
+}
+
 // QueryParser parses the query parameters.
 // Make sure the out parameter is a pointer.
 func (c *Ctx) QueryParser(out any) error {
